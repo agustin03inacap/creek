@@ -28,7 +28,7 @@ pub enum ProcessToGuiMsg {
 fn main() {
     let cli_arg = std::env::args()
         .nth(1)
-        .unwrap_or("./test_files/wav_i24_stereo.wav".to_string());
+        .unwrap_or("./../../test_files/wav_i24_stereo.wav".to_string());
     let file_path = std::path::PathBuf::from(cli_arg);
 
     let (to_gui_tx, from_process_rx) = RingBuffer::<ProcessToGuiMsg>::new(256);

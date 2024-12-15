@@ -8,7 +8,8 @@ use crate::{GuiToProcessMsg, ProcessToGuiMsg};
 // so keep it on screen for longer.
 static BUFFERING_FADEOUT_FRAMES: usize = 25;
 
-pub struct DemoPlayerApp {
+pub struct DemoPlayerApp
+{
     playing: bool,
     current_frame: usize,
     num_frames: usize,
@@ -22,31 +23,22 @@ pub struct DemoPlayerApp {
 
     buffering_anim: usize,
 
-    cache_size: usize,
+    cache_size: usize
 }
 
-impl DemoPlayerApp {
+impl DemoPlayerApp
+{
     pub fn new(
         mut to_player_tx: Producer<GuiToProcessMsg>,
         from_player_rx: Consumer<ProcessToGuiMsg>,
         file_path: std::path::PathBuf,
-        _cc: &eframe::CreationContext<'_>,
-    ) -> Self {
+        _cc: &eframe::CreationContext<'_>
+    ) -> Self
+    {
         // Setup read stream -------------------------------------------------------------
 
         let opts = ReadStreamOptions {
-            // The number of prefetch blocks in a cache block. This will cause a cache to be
-            // used whenever the stream is seeked to a frame in the range:
-            //
-            // `[cache_start, cache_start + (num_cache_blocks * block_size))`
-            //
-            // If this is 0, then the cache is only used when seeked to exactly `cache_start`.
             num_cache_blocks: 20,
-
-            // The maximum number of caches that can be active in this stream. Keep in mind each
-            // cache uses some memory (but memory is only allocated when the cache is created).
-            //
-            // The default is `1`.
             num_caches: 2,
             ..Default::default()
         };
@@ -81,7 +73,7 @@ impl DemoPlayerApp {
         to_player_tx
             .push(GuiToProcessMsg::SetLoop {
                 start: loop_start,
-                end: loop_end,
+                end: loop_end
             })
             .unwrap();
 
@@ -99,22 +91,29 @@ impl DemoPlayerApp {
 
             buffering_anim: 0,
 
-            cache_size,
+            cache_size
         }
     }
 }
 
-impl eframe::App for DemoPlayerApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        while let Ok(msg) = self.from_player_rx.pop() {
-            match msg {
-                ProcessToGuiMsg::PlaybackPos(pos) => {
+impl eframe::App for DemoPlayerApp
+{
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
+    {
+        while let Ok(msg) = self.from_player_rx.pop()
+        {
+            match msg
+            {
+                ProcessToGuiMsg::PlaybackPos(pos) =>
+                {
                     self.current_frame = pos;
                 }
-                ProcessToGuiMsg::Buffering => {
+                ProcessToGuiMsg::Buffering =>
+                {
                     self.buffering_anim = BUFFERING_FADEOUT_FRAMES;
                 }
-                ProcessToGuiMsg::DropOldStream(_) => {}
+                ProcessToGuiMsg::DropOldStream(_) =>
+                {}
             }
         }
 
@@ -127,24 +126,30 @@ impl eframe::App for DemoPlayerApp {
 
             ui.horizontal(|ui| {
                 let play_label = if self.playing { "Pause" } else { "Play" };
-                if ui.button(play_label).clicked() {
-                    if self.playing {
+                if ui.button(play_label).clicked()
+                {
+                    if self.playing
+                    {
                         self.playing = false;
 
                         let _ = self.to_player_tx.push(GuiToProcessMsg::Pause);
-                    } else {
+                    }
+                    else
+                    {
                         self.playing = true;
 
                         let _ = self.to_player_tx.push(GuiToProcessMsg::PlayResume);
                     }
                 }
 
-                if ui.button("Stop").clicked() {
+                if ui.button("Stop").clicked()
+                {
                     self.playing = false;
                     let _ = self.to_player_tx.push(GuiToProcessMsg::Stop);
                 }
 
-                if ui.button("Restart").clicked() {
+                if ui.button("Restart").clicked()
+                {
                     self.playing = true;
                     let _ = self.to_player_tx.push(GuiToProcessMsg::Restart);
                 }
@@ -157,11 +162,15 @@ impl eframe::App for DemoPlayerApp {
             if (loop_start != self.loop_start || loop_end != self.loop_end)
                 && ui.input(|i| i.pointer.any_released() || i.key_pressed(egui::Key::Enter))
             {
-                if loop_end <= loop_start {
-                    if loop_start == self.num_frames {
+                if loop_end <= loop_start
+                {
+                    if loop_start == self.num_frames
+                    {
                         loop_start = self.num_frames - 1;
                         loop_end = self.num_frames;
-                    } else {
+                    }
+                    else
+                    {
                         loop_end = loop_start + 1;
                     }
                 };
@@ -172,15 +181,18 @@ impl eframe::App for DemoPlayerApp {
                 self.to_player_tx
                     .push(GuiToProcessMsg::SetLoop {
                         start: loop_start,
-                        end: loop_end,
+                        end: loop_end
                     })
                     .unwrap();
             }
 
-            if self.buffering_anim > 0 {
+            if self.buffering_anim > 0
+            {
                 ui.colored_label(egui::Color32::from_rgb(255, 0, 0), "Status: Buffered");
                 self.buffering_anim -= 1;
-            } else {
+            }
+            else
+            {
                 ui.colored_label(egui::Color32::from_rgb(0, 255, 0), "Status: Ready");
             }
 
@@ -190,10 +202,11 @@ impl eframe::App for DemoPlayerApp {
                 self.num_frames,
                 self.loop_start,
                 self.loop_end,
-                self.cache_size,
+                self.cache_size
             );
 
-            if user_seeked {
+            if user_seeked
+            {
                 let _ = self
                     .to_player_tx
                     .push(GuiToProcessMsg::SeekTo(self.current_frame));
@@ -202,28 +215,32 @@ impl eframe::App for DemoPlayerApp {
     }
 }
 
-struct TransportControl {
+struct TransportControl
+{
     rail_stroke: egui::Stroke,
     handle_stroke: egui::Stroke,
     loop_stroke: egui::Stroke,
     cache_stroke: egui::Stroke,
 
-    seeking: bool,
+    seeking: bool
 }
 
-impl Default for TransportControl {
-    fn default() -> Self {
+impl Default for TransportControl
+{
+    fn default() -> Self
+    {
         Self {
             rail_stroke: egui::Stroke::new(1.0, egui::Color32::GRAY),
             handle_stroke: egui::Stroke::new(1.0, egui::Color32::WHITE),
             loop_stroke: egui::Stroke::new(1.0, egui::Color32::from_rgb(0, 255, 0)),
             cache_stroke: egui::Stroke::new(1.0, egui::Color32::from_rgb(0, 255, 255)),
-            seeking: false,
+            seeking: false
         }
     }
 }
 
-impl TransportControl {
+impl TransportControl
+{
     const PADDING: f32 = 20.0;
 
     pub fn ui(
@@ -233,8 +250,9 @@ impl TransportControl {
         max_value: usize,
         loop_start: usize,
         loop_end: usize,
-        cache_size: usize,
-    ) -> (egui::Response, bool) {
+        cache_size: usize
+    ) -> (egui::Response, bool)
+    {
         let (response, painter) =
             ui.allocate_painter(ui.available_size_before_wrap(), egui::Sense::drag());
         let rect = response.rect;
@@ -250,9 +268,9 @@ impl TransportControl {
         shapes.push(egui::Shape::line_segment(
             [
                 egui::Pos2::new(start_x, rail_y),
-                egui::Pos2::new(end_x, rail_y),
+                egui::Pos2::new(end_x, rail_y)
             ],
-            self.rail_stroke,
+            self.rail_stroke
         ));
 
         // Drop loop range.
@@ -262,18 +280,20 @@ impl TransportControl {
         shapes.push(egui::Shape::line_segment(
             [
                 egui::Pos2::new(loop_start_x, rail_y),
-                egui::Pos2::new(loop_end_x, rail_y),
+                egui::Pos2::new(loop_end_x, rail_y)
             ],
-            self.loop_stroke,
+            self.loop_stroke
         ));
 
-        if let Some(press_origin) = ui.input(|i| i.pointer.press_origin()) {
+        if let Some(press_origin) = ui.input(|i| i.pointer.press_origin())
+        {
             if press_origin.x >= start_x
                 && press_origin.x <= end_x
                 && press_origin.y >= rail_y - 10.0
                 && press_origin.y <= rail_y + 10.0
             {
-                if let Some(mouse_pos) = ui.input(|i| i.pointer.interact_pos()) {
+                if let Some(mouse_pos) = ui.input(|i| i.pointer.interact_pos())
+                {
                     let handle_x = mouse_pos.x - start_x;
                     *value = (((handle_x / rail_width) * max_value as f32).round() as isize)
                         .max(0)
@@ -285,8 +305,10 @@ impl TransportControl {
         }
 
         let mut changed: bool = false;
-        if ui.input(|i| i.pointer.any_released()) && self.seeking {
-            if let Some(mouse_pos) = ui.input(|i| i.pointer.interact_pos()) {
+        if ui.input(|i| i.pointer.any_released()) && self.seeking
+        {
+            if let Some(mouse_pos) = ui.input(|i| i.pointer.interact_pos())
+            {
                 let handle_x = mouse_pos.x - start_x;
                 *value = (((handle_x / rail_width) * max_value as f32).round() as isize)
                     .max(0)
@@ -304,22 +326,23 @@ impl TransportControl {
         shapes.push(egui::Shape::line_segment(
             [
                 egui::Pos2::new(handle_x, rail_y - 10.0),
-                egui::Pos2::new(handle_x, rail_y + 10.0),
+                egui::Pos2::new(handle_x, rail_y + 10.0)
             ],
-            self.handle_stroke,
+            self.handle_stroke
         ));
 
         // Draw cached ranges.
         let caches: [usize; 2] = [0, loop_start];
         let cache_width = (cache_size as f32 / max_value as f32) * rail_width;
-        for cache_pos in caches.iter() {
+        for cache_pos in caches.iter()
+        {
             let x = start_x + ((*cache_pos as f32 / max_value as f32) * rail_width);
             shapes.push(egui::Shape::line_segment(
                 [
                     egui::Pos2::new(x, rail_y + 30.0),
-                    egui::Pos2::new(x + cache_width, rail_y + 30.0),
+                    egui::Pos2::new(x + cache_width, rail_y + 30.0)
                 ],
-                self.cache_stroke,
+                self.cache_stroke
             ));
         }
 

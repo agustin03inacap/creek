@@ -1,6 +1,0 @@
-max_width = 100
-tab_spaces = 4
-
-# TODO: Enable after available on stable Rust
-# Tracking issue: <https://github.com/rust-lang/rustfmt/issues/4991>
-#imports_granularity = "Preserve"
